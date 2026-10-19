@@ -4,11 +4,47 @@
 
 let cachedToken: { token: string; expiresAt: number } | null = null
 
+const g = globalThis as unknown as { __ringPlaygroundToken?: { token: string; expiresAt: number } }
+
+/** Seconds-since-epoch `exp` from a JWT, without verifying it (Ring does that). */
+export function tokenExpiry(token: string): number | null {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString())
+    return typeof payload.exp === 'number' ? payload.exp * 1000 : null
+  } catch {
+    return null
+  }
+}
+
+/** A Playground token pasted into the dashboard. Held in memory only, never written to disk. */
+export function setPlaygroundToken(token: string) {
+  const expiresAt = tokenExpiry(token)
+  if (!expiresAt) throw new Error('That does not look like a Ring token')
+  if (expiresAt <= Date.now()) throw new Error('That token has already expired')
+  g.__ringPlaygroundToken = { token, expiresAt }
+  return expiresAt
+}
+
+function livePlaygroundToken(): string | null {
+  const t = g.__ringPlaygroundToken
+  return t && t.expiresAt > Date.now() ? t.token : null
+}
+
+/** When the token in use expires, if known (Playground tokens last 30 minutes). */
+export function currentTokenExpiry(): number | null {
+  if (livePlaygroundToken()) return g.__ringPlaygroundToken!.expiresAt
+  if (process.env.RING_ACCESS_TOKEN) return tokenExpiry(process.env.RING_ACCESS_TOKEN)
+  return null
+}
+
 export function isRingConfigured(): boolean {
-  return Boolean(process.env.RING_ACCESS_TOKEN || process.env.RING_REFRESH_TOKEN)
+  return Boolean(livePlaygroundToken() || process.env.RING_ACCESS_TOKEN || process.env.RING_REFRESH_TOKEN)
 }
 
 export async function getAccessToken(): Promise<string> {
+  const pasted = livePlaygroundToken()
+  if (pasted) return pasted
+
   if (process.env.RING_ACCESS_TOKEN && process.env.RING_REFRESH_TOKEN) {
     throw new Error('Both RING_ACCESS_TOKEN and RING_REFRESH_TOKEN are set. Use only one.')
   }

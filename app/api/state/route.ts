@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { buildDigest } from '@/lib/engine/digest'
 import { activeIncident } from '@/lib/engine/detector'
 import { isAiEnabled } from '@/lib/ai/describe'
-import { isRingConfigured } from '@/lib/ring/auth'
+import { currentTokenExpiry, isRingConfigured } from '@/lib/ring/auth'
 import { getState } from '@/lib/runtime'
 import { SCENARIOS, isSimulatorEnabled } from '@/lib/simulator'
 
@@ -21,6 +21,7 @@ export async function GET() {
     incidents: state.incidents.filter((i) => i.timeline.length > 1 || !i.simulated).slice(0, 15),
     events: state.events.slice(0, 40),
     digest: buildDigest(state.incidents, now),
+    ringTokenExpiresAt: currentTokenExpiry(),
     integrations: {
       ring: isRingConfigured(),
       webhookSigned: Boolean(process.env.RING_HMAC_KEY),

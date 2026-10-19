@@ -27,7 +27,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(await startWhepSession(camera.id, parsed.data.sdpOffer))
   } catch (error) {
     const status = error instanceof RingApiError ? error.status : 502
-    return NextResponse.json({ error: String(error) }, { status })
+    const message =
+      status === 401
+        ? 'Ring rejected the access token. It has probably expired: generate a new one in the Ring Playground and update RING_ACCESS_TOKEN.'
+        : String(error)
+    return NextResponse.json({ error: message }, { status })
   }
 }
 

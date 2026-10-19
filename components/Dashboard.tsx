@@ -14,6 +14,7 @@ interface DashboardState {
   incidents: Incident[]
   events: HomeEvent[]
   digest: Digest
+  ringTokenExpiresAt: number | null
   integrations: { ring: boolean; webhookSigned: boolean; bedrock: boolean; sns: boolean; simulator: boolean }
   scenarios: { id: string; label: string }[]
 }
@@ -109,6 +110,9 @@ export default function Dashboard() {
         <DevicesPanel
           devices={state.devices}
           settings={state.settings}
+          tokenExpiresAt={state.ringTokenExpiresAt}
+          now={now}
+          onToken={(token) => act(() => send('/api/ring/token', 'POST', { token }))}
           onMap={(patch) => act(() => send('/api/settings', 'PUT', patch))}
           onRefresh={() => act(() => send('/api/devices', 'POST'))}
         />
@@ -342,14 +346,55 @@ function SimulatorPanel({
   )
 }
 
+function TokenBox({ expiresAt, now, onToken }: { expiresAt: number | null; now: number; onToken: (t: string) => void }) {
+  const [value, setValue] = useState('')
+  const remaining = expiresAt ? Math.floor((expiresAt - now) / 1000) : null
+  const status =
+    remaining === null
+      ? 'No Playground token in use'
+      : remaining > 0
+        ? `Playground token valid for ${formatDuration(remaining)}`
+        : 'Playground token expired'
+  return (
+    <div className="mb-4 rounded-md border border-line p-3">
+      <p className={`mb-2 text-xs ${remaining !== null && remaining <= 0 ? 'text-alarm' : 'text-slate-400'}`}>{status}</p>
+      <form
+        className="flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (!value.trim()) return
+          onToken(value.trim())
+          setValue('')
+        }}
+      >
+        <input
+          type="password"
+          autoComplete="off"
+          className="input"
+          placeholder="Paste a new Ring Playground token"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+        />
+        <button className="btn shrink-0" type="submit">Use</button>
+      </form>
+    </div>
+  )
+}
+
 function DevicesPanel({
   devices,
   settings,
+  tokenExpiresAt,
+  now,
+  onToken,
   onMap,
   onRefresh,
 }: {
   devices: Device[]
   settings: Settings
+  tokenExpiresAt: number | null
+  now: number
+  onToken: (token: string) => void
   onMap: (patch: Partial<Settings>) => void
   onRefresh: () => void
 }) {
@@ -359,6 +404,7 @@ function DevicesPanel({
         <h2 className="label mb-0">Ring devices</h2>
         <button className="btn py-1 text-xs" onClick={onRefresh}>Refresh from Ring</button>
       </div>
+      <TokenBox expiresAt={tokenExpiresAt} now={now} onToken={onToken} />
       <ul className="mb-4 space-y-1 text-sm">
         {devices.map((d) => (
           <li key={d.id} className="flex items-center justify-between gap-2">
