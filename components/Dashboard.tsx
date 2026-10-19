@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { IncidentDetails, Timeline, clock } from '@/components/IncidentCard'
+import LivePorchView from '@/components/LivePorchView'
 import type { Digest } from '@/lib/engine/digest'
 import type { Device, HomeEvent, Incident, Settings } from '@/lib/types'
 
@@ -199,12 +200,23 @@ function StatusHero({
   }
 
   const minutesOut = Math.max(1, Math.floor((now - active.doorOpenedAt) / 60_000))
+  const camera = state.devices.find((d) => d.id === settings.outdoorCameraId)
+  const canStreamLive = camera?.source === 'ring' && !camera.e2eEncrypted
   return (
     <section className="card border-alarm bg-alarm/10" role="alert">
       <p className="text-sm font-semibold uppercase tracking-wide text-alarm">{name} has left home</p>
       <p className="mt-1 text-2xl font-semibold text-white">
         Out since {clock(active.doorOpenedAt, settings.timezone)} · {minutesOut} min
       </p>
+      {canStreamLive && (
+        <div className="mt-4 md:w-1/2">
+          <p className="label">Porch right now</p>
+          <LivePorchView
+            autoStart
+            captureForIncidentId={active.snapshot?.status === 'ok' ? undefined : active.id}
+          />
+        </div>
+      )}
       <div className="mt-4">
         <IncidentDetails incident={active} settings={settings} />
       </div>

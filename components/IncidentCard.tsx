@@ -8,16 +8,23 @@ export function clock(at: number, timezone: string) {
   )
 }
 
-function SnapshotBlock({ incident }: { incident: Incident }) {
+function SnapshotBlock({ incident, timezone }: { incident: Incident; timezone: string }) {
   const snap = incident.snapshot
   if (snap?.status === 'ok') {
+    const caption =
+      snap.source === 'live' ? 'Frame from the live Ring view' : snap.source === 'demo' ? 'Demo photo' : 'Ring porch camera'
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={`/api/snapshots/${incident.shareToken}`}
-        alt="Porch camera photo taken moments after the door opened"
-        className="w-full rounded-lg border border-line object-cover aspect-video bg-black"
-      />
+      <figure className="space-y-1">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`/api/snapshots/${incident.shareToken}?v=${snap.capturedAt}`}
+          alt="Porch camera photo taken moments after the door opened"
+          className="w-full rounded-lg border border-line object-cover aspect-video bg-black"
+        />
+        <figcaption className="text-xs text-slate-500">
+          {caption} · {clock(snap.capturedAt, timezone)}
+        </figcaption>
+      </figure>
     )
   }
   const text =
@@ -26,7 +33,7 @@ function SnapshotBlock({ incident }: { incident: Incident }) {
       : snap?.reason === 'no_camera'
         ? 'No outdoor camera is set up. Alert is based on the door sensor.'
         : snap?.reason === 'error'
-          ? 'The camera photo could not be retrieved.'
+          ? 'No recorded photo from the camera yet.'
           : 'Waiting for a photo from the porch camera…'
   return (
     <div className="flex aspect-video w-full items-center justify-center rounded-lg border border-dashed border-line p-6 text-center text-sm text-slate-400">
@@ -39,7 +46,7 @@ export function IncidentDetails({ incident, settings }: { incident: Incident; se
   const d = incident.description
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <SnapshotBlock incident={incident} />
+      <SnapshotBlock incident={incident} timezone={settings.timezone} />
       <div className="space-y-3">
         {d ? (
           <>

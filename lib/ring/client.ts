@@ -82,6 +82,27 @@ export async function listDevices(): Promise<Device[]> {
   )
 }
 
+/** Open a live WHEP session. Returns Ring's SDP answer and the session URL for teardown. */
+export async function startWhepSession(deviceId: string, sdpOffer: string) {
+  const res = await ringFetch(`/v1/devices/${deviceId}/media/streaming/whep/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/sdp' },
+    body: sdpOffer,
+  })
+  const location = res.headers.get('location')
+  return {
+    sdpAnswer: await res.text(),
+    sessionUrl: location ? new URL(location, API_BASE).toString() : null,
+  }
+}
+
+/** Close a WHEP session. Only Ring URLs are accepted, since this request carries our token. */
+export async function stopWhepSession(sessionUrl: string) {
+  const url = new URL(sessionUrl)
+  if (url.origin !== new URL(API_BASE).origin) throw new Error('Not a Ring session URL')
+  await ringFetch(url.pathname + url.search, { method: 'DELETE' })
+}
+
 const SNAPSHOT_ATTEMPTS = 4
 const SNAPSHOT_RETRY_MS = 3000
 

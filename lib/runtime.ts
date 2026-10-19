@@ -117,14 +117,32 @@ async function captureAndDescribe(incidentId: string, cameraId: string, at: numb
         : await downloadSnapshot(cameraId, at - SNAPSHOT_LOOKBACK_MS)
     if (!image) throw new Error('No demo image found in demo-assets/')
   } catch (error) {
+    // A live-view frame may have landed while we were retrying; keep it.
+    if (incident.snapshot?.status === 'ok') return
     incident.snapshot = { status: 'unavailable', reason: 'error', detail: String(error) }
-    note(incident, 'Could not get a photo from the camera')
+    note(incident, 'No recorded photo yet. The live view can capture one')
     return commit(state)
   }
 
+  await savePhoto(incident, image, at, camera?.source === 'simulator' ? 'demo' : 'recorded')
+}
+
+/**
+ * A frame grabbed from the live Ring view on the caregiver's dashboard. Used when no
+ * recorded snapshot exists (e.g. Ring's Playground doesn't record live-view sessions).
+ */
+export async function attachLiveFrame(incidentId: string, image: Buffer): Promise<boolean> {
+  const incident = findIncident(incidentId)
+  if (!incident || incident.snapshot?.status === 'ok') return false
+  await savePhoto(incident, image, Date.now(), 'live')
+  return true
+}
+
+async function savePhoto(incident: Incident, image: Buffer, at: number, source: 'recorded' | 'live' | 'demo') {
+  const state = getState()
   const file = writeSnapshot(incident.id, image, imageFormat(image) === 'png' ? 'png' : 'jpg')
-  incident.snapshot = { status: 'ok', file, capturedAt: at }
-  note(incident, 'Photo saved from the porch camera')
+  incident.snapshot = { status: 'ok', file, capturedAt: at, source }
+  note(incident, source === 'live' ? 'Frame captured from the live Ring view' : 'Photo saved from the porch camera')
   commit(state)
 
   if (!isAiEnabled()) return
