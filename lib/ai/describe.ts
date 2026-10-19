@@ -23,8 +23,10 @@ Reply with JSON only, no prose:
 
 let client: BedrockRuntimeClient | null = null
 
+/** On when AWS credentials are present (env keys or a named profile) and not switched off. */
 export function isAiEnabled(): boolean {
-  return process.env.AI_DISABLED !== 'true'
+  if (process.env.AI_DISABLED === 'true') return false
+  return Boolean(process.env.AWS_ACCESS_KEY_ID || process.env.AWS_PROFILE)
 }
 
 export function imageFormat(image: Buffer): 'jpeg' | 'png' {
