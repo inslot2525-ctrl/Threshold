@@ -15,8 +15,8 @@ export function isSimulatorEnabled(): boolean {
 }
 
 export const SIM_DEVICES: Device[] = [
-  { id: SIM_DOOR_ID, name: 'Front door (contact sensor)', source: 'simulator', online: true, e2eEncrypted: false, hasVideo: false },
-  { id: SIM_CAMERA_ID, name: 'Porch camera', source: 'simulator', online: true, e2eEncrypted: false, hasVideo: true },
+  { id: SIM_DOOR_ID, name: 'Front door (contact sensor)', source: 'simulator', kind: 'contact_sensor', online: true, e2eEncrypted: false, hasVideo: false },
+  { id: SIM_CAMERA_ID, name: 'Porch camera', source: 'simulator', kind: 'camera', online: true, e2eEncrypted: false, hasVideo: true },
 ]
 
 interface Step {
@@ -61,7 +61,11 @@ export const SCENARIOS: Record<string, { label: string; steps: Step[] }> = {
   },
 }
 
-export function runScenario(name: string, webhookUrl: string): number {
+/**
+ * `cameraId` may be a real Ring camera (e.g. the Playground device): camera events are
+ * then attributed to it, so the alert photo comes from Ring's real snapshot API.
+ */
+export function runScenario(name: string, webhookUrl: string, cameraId = SIM_CAMERA_ID): number {
   const scenario = SCENARIOS[name]
   if (!scenario) throw new Error(`Unknown scenario: ${name}`)
   const key = process.env.RING_HMAC_KEY
@@ -72,7 +76,7 @@ export function runScenario(name: string, webhookUrl: string): number {
         buildWebhook({
           type: step.type,
           subType: step.subType,
-          deviceId: step.device === 'door' ? SIM_DOOR_ID : SIM_CAMERA_ID,
+          deviceId: step.device === 'door' ? SIM_DOOR_ID : cameraId,
           at: Date.now(),
           requestId: randomUUID(),
         })

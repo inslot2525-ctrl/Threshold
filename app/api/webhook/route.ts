@@ -25,7 +25,9 @@ export async function POST(request: NextRequest) {
   const webhook = parseWebhook(rawBody)
   if (!webhook) return NextResponse.json({ error: 'Not a Ring v1.1 webhook' }, { status: 400 })
 
-  const event = toHomeEvent(webhook, webhook.data.attributes.source.startsWith('sim.'))
+  // Only labels the event for the UI; it grants nothing, and the signature was already checked.
+  const simulated = request.headers.get('x-threshold-simulated') === '1'
+  const event = toHomeEvent(webhook, simulated)
   const processed = ingest(event)
   return NextResponse.json({ status: processed ? 'processed' : 'duplicate', request_id: event.requestId })
 }

@@ -18,6 +18,8 @@ import { loadState, saveState, writeSnapshot, type State } from '@/lib/store'
 import type { HomeEvent, Incident, Settings } from '@/lib/types'
 
 const TICK_MS = 2000
+/** Ring may record the clip slightly before the motion webhook is sent. */
+const SNAPSHOT_LOOKBACK_MS = 60_000
 
 const ids = {
   id: () => randomUUID(),
@@ -112,7 +114,7 @@ async function captureAndDescribe(incidentId: string, cameraId: string, at: numb
     image =
       camera?.source === 'simulator'
         ? demoSnapshot()
-        : await downloadSnapshot(cameraId, at - 10_000, Math.min(at + 20_000, Date.now()))
+        : await downloadSnapshot(cameraId, at - SNAPSHOT_LOOKBACK_MS)
     if (!image) throw new Error('No demo image found in demo-assets/')
   } catch (error) {
     incident.snapshot = { status: 'unavailable', reason: 'error', detail: String(error) }

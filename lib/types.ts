@@ -79,6 +79,8 @@ export interface Device {
   id: string
   name: string
   source: 'ring' | 'simulator'
+  /** From capabilities: a camera has `video`, a door/window sensor has `contact_detection`. */
+  kind: 'camera' | 'contact_sensor' | 'other'
   online: boolean | null
   /** Cameras with TAKE/E2EE on return video we can't read. */
   e2eEncrypted: boolean

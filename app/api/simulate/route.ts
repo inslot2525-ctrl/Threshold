@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { clearSimulated, seedHistory } from '@/lib/runtime'
+import { clearSimulated, getState, seedHistory } from '@/lib/runtime'
 import { SCENARIOS, isSimulatorEnabled, runScenario } from '@/lib/simulator'
 
 export const dynamic = 'force-dynamic'
@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unknown scenario' }, { status: 404 })
   }
   const webhookUrl = new URL('/api/webhook', request.url).toString()
-  const steps = runScenario(parsed.data.scenario, webhookUrl)
+  const { outdoorCameraId } = getState().settings
+  const steps = runScenario(parsed.data.scenario, webhookUrl, outdoorCameraId ?? undefined)
   return NextResponse.json({ started: parsed.data.scenario, steps })
 }
