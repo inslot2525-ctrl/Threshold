@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-panel p-4 sm:p-5;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400;
+  }
+  .input {
+    @apply w-full rounded-md border border-line bg-ink px-3 py-2 text-sm text-slate-100 focus:border-slate-400 focus:outline-none;
+  }
+  .btn {
+    @apply rounded-md border border-line px-3 py-2 text-sm font-medium transition hover:bg-slate-700 disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply rounded-md bg-white px-4 py-2 text-sm font-semibold text-ink transition hover:bg-slate-200;
+  }
+}
