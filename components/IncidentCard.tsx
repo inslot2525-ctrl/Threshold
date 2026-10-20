@@ -67,7 +67,7 @@ export function IncidentDetails({ incident, settings }: { incident: Incident; se
               </ul>
             )}
             <p className="text-xs text-slate-500">
-              AI description ({d.model}). Clothing and direction only, no face or identity analysis.
+              Description by {d.model}. Clothing and surroundings only, no face or identity analysis.
             </p>
           </>
         ) : (

@@ -2,6 +2,7 @@
 // Deliberately describes clothing and direction only, never identity.
 
 import { BedrockRuntimeClient, ConverseCommand } from '@aws-sdk/client-bedrock-runtime'
+import { describeWithRekognition } from '@/lib/ai/labels'
 import type { Description } from '@/lib/types'
 
 const MODEL_ID = process.env.BEDROCK_MODEL_ID || 'us.amazon.nova-lite-v1:0'
@@ -33,7 +34,30 @@ export function imageFormat(image: Buffer): 'jpeg' | 'png' {
   return image[0] === 0x89 && image[1] === 0x50 ? 'png' : 'jpeg'
 }
 
+/** After Bedrock fails (quota, verification), skip it for a while instead of failing every alert. */
+const BEDROCK_COOLDOWN_MS = 10 * 60_000
+let bedrockDownUntil = 0
+
+/**
+ * Bedrock first, Rekognition labels as the fallback. DESCRIBE_PROVIDER=bedrock|rekognition pins one.
+ */
 export async function describeSnapshot(image: Buffer): Promise<Description> {
+  const provider = process.env.DESCRIBE_PROVIDER ?? 'auto'
+  if (provider === 'rekognition') return describeWithRekognition(image)
+  if (provider === 'bedrock') return describeWithBedrock(image)
+
+  if (Date.now() >= bedrockDownUntil) {
+    try {
+      return await describeWithBedrock(image)
+    } catch (error) {
+      bedrockDownUntil = Date.now() + BEDROCK_COOLDOWN_MS
+      console.warn('[describe] Bedrock unavailable, falling back to Rekognition:', String(error).slice(0, 160))
+    }
+  }
+  return describeWithRekognition(image)
+}
+
+export async function describeWithBedrock(image: Buffer): Promise<Description> {
   client ??= new BedrockRuntimeClient({ region: process.env.AWS_REGION || 'us-east-1' })
 
   const res = await client.send(
