@@ -285,6 +285,7 @@ const STATE_LABEL: Record<Incident['state'], string> = {
   safe: 'Marked safe',
   false_alarm: 'False alarm',
   no_exit: 'Door only',
+  expired: 'Not resolved',
 }
 
 function RecentIncidents({ incidents, settings }: { incidents: Incident[]; settings: Settings }) {

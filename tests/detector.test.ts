@@ -156,6 +156,24 @@ describe('night exit', () => {
     run(incidents, settings(), [ev('contact_sensor_faulted', DOOR, NIGHT), ev('contact_sensor_faulted', DOOR, NIGHT + 1_000)])
     expect(incidents).toHaveLength(1)
   })
+
+  it('treats a new exit as new when the last alert was never resolved', () => {
+    const incidents: Incident[] = []
+    const s = settings({ armMode: 'always' })
+    run(incidents, s, [
+      ev('contact_sensor_faulted', DOOR, NIGHT),
+      ev('motion_detected', CAM, NIGHT + 1_000, 'human'),
+      ev('contact_sensor_cleared', DOOR, NIGHT + 2_000),
+    ])
+    tick(incidents, s, NIGHT + 700_000)
+    expect(incidents[0].state).toBe('alerted')
+
+    const nextNight = NIGHT + 24 * 3_600_000
+    run(incidents, s, [ev('contact_sensor_faulted', DOOR, nextNight)])
+    expect(incidents).toHaveLength(2)
+    expect(incidents[1].state).toBe('expired')
+    expect(incidents[0].state).toBe('watching')
+  })
 })
 
 describe('weekly digest', () => {

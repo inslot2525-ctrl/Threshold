@@ -78,7 +78,7 @@ Every entry was reproduced during the build. Severity: **High** blocks a feature
 - **Expected:** A response, or an error saying the account has no quota.
 - **Actual:** `ThrottlingException: Too many tokens per day, please wait before trying again` on the very first request. One region instead said "Your account is currently being verified". Service Quotas showed the Nova Lite quotas at 0, most "Not adjustable". A support case was needed.
 - **Severity:** High for a time-boxed hackathon.
-- **Workaround:** Support case; app falls back to photo-only alerts.
+- **Workaround:** Support case filed. Meanwhile the app falls back to Amazon Rekognition `DetectLabels` and turns the labels into the same search description (clothing, carried items, position in frame, concerns), switching back to Bedrock automatically once it answers.
 - **Suggestion:** Say "Your account's quota for this model is 0; request an increase" instead of a throttling message, and give hackathon participants a fast path.
 
 ## 8. Incomplete AWS registration redirects every console

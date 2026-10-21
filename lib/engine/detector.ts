@@ -25,6 +25,9 @@ const CAMERA_LEAD_MS = 5_000
 
 const PERSON_SUBTYPES = new Set(['human'])
 
+/** An incident nobody resolved shouldn't make tomorrow night's exit look like a return. */
+const STALE_AFTER_MS = 12 * 60 * 60_000
+
 export function activeIncident(incidents: Incident[]): Incident | undefined {
   return incidents.find((i) => ACTIVE_STATES.includes(i.state))
 }
@@ -47,8 +50,15 @@ export function handleEvent(
   ids: IdSource
 ): Effect[] {
   const effects: Effect[] = []
-  const active = activeIncident(incidents)
+  let active = activeIncident(incidents)
   const tz = settings.timezone
+
+  if (active && event.at - active.doorOpenedAt > STALE_AFTER_MS) {
+    active.state = 'expired'
+    active.resolvedAt = event.at
+    log(active, event.at, 'Closed automatically: not resolved within 12 hours')
+    active = undefined
+  }
 
   if (settings.doorSensorId && event.deviceId === settings.doorSensorId) {
     if (event.type === 'contact_sensor_faulted') {

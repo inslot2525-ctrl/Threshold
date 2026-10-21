@@ -39,6 +39,7 @@ export type IncidentState =
   | 'safe' // caregiver confirmed safe
   | 'false_alarm'
   | 'no_exit' // door opened, but nobody was seen outside
+  | 'expired' // never resolved; closed when a later exit began
 
 export interface Description {
   summary: string

@@ -150,7 +150,7 @@ async function savePhoto(incident: Incident, image: Buffer, at: number, source: 
     incident.description = await describeSnapshot(image)
     note(incident, 'Description ready for searchers')
   } catch (error) {
-    console.error('[runtime] Bedrock describe failed', error)
+    console.error('[runtime] describe failed', error)
     note(incident, 'Could not generate a description. Photo is still available')
   }
   commit(state)
