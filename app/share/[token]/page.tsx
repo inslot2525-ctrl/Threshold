@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Backdrop from '@/components/Backdrop'
 import { IncidentDetails, clock } from '@/components/IncidentCard'
 import { getState } from '@/lib/runtime'
 
@@ -20,15 +21,16 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
   const stillMissing = incident.state === 'alerted' || incident.state === 'watching'
 
   return (
-    <main className="mx-auto max-w-3xl space-y-4 px-4 py-6">
+    <main className="mx-auto max-w-3xl space-y-5 px-4 py-8">
+      <Backdrop mood={stillMissing ? 'alarm' : 'calm'} />
       <meta httpEquiv="refresh" content="20" />
       <header>
         {stillMissing ? (
-          <p className="text-sm font-semibold uppercase tracking-wide text-alarm">Please help look</p>
+          <p className="chip border-alarm/40 bg-alarm/10 font-bold uppercase tracking-[0.14em] text-alarm">Please help look</p>
         ) : (
-          <p className="text-sm font-semibold uppercase tracking-wide text-calm">Update: no longer missing</p>
+          <p className="chip border-calm/40 bg-calm/10 font-bold uppercase tracking-[0.14em] text-calm">Update: no longer missing</p>
         )}
-        <h1 className="mt-1 text-2xl font-semibold text-white">
+        <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
           {settings.personName} left home at {clock(incident.doorOpenedAt, settings.timezone)}
         </h1>
         <p className="text-sm text-slate-400">
