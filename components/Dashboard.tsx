@@ -15,7 +15,7 @@ interface DashboardState {
   events: HomeEvent[]
   digest: Digest
   ringTokenExpiresAt: number | null
-  integrations: { ring: boolean; webhookSigned: boolean; bedrock: boolean; sns: boolean; simulator: boolean }
+  integrations: { ring: boolean; webhookSigned: boolean; bedrock: boolean; describer: string; sns: boolean; simulator: boolean }
   scenarios: { id: string; label: string }[]
 }
 
@@ -128,7 +128,7 @@ function Integrations({ integrations }: { integrations: DashboardState['integrat
   const chips: [string, boolean][] = [
     ['Ring API', integrations.ring],
     ['Signed webhooks', integrations.webhookSigned],
-    ['Bedrock', integrations.bedrock],
+    [integrations.describer, integrations.bedrock],
     ['SNS texts', integrations.sns],
   ]
   return (

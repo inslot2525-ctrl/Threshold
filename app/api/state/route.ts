@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { buildDigest } from '@/lib/engine/digest'
 import { activeIncident } from '@/lib/engine/detector'
-import { isAiEnabled } from '@/lib/ai/describe'
+import { describerName, isAiEnabled } from '@/lib/ai/describe'
 import { currentTokenExpiry, isRingConfigured } from '@/lib/ring/auth'
 import { getState } from '@/lib/runtime'
 import { SCENARIOS, isSimulatorEnabled } from '@/lib/simulator'
@@ -26,6 +26,7 @@ export async function GET() {
       ring: isRingConfigured(),
       webhookSigned: Boolean(process.env.RING_HMAC_KEY),
       bedrock: isAiEnabled(),
+      describer: describerName(),
       sns: Boolean(process.env.SNS_TOPIC_ARN),
       simulator: isSimulatorEnabled(),
     },

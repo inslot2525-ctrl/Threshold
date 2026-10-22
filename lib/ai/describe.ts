@@ -30,6 +30,14 @@ export function isAiEnabled(): boolean {
   return Boolean(process.env.AWS_ACCESS_KEY_ID || process.env.AWS_PROFILE)
 }
 
+/** Name shown on the dashboard for whichever describer is in use. */
+export function describerName(): string {
+  const provider = process.env.DESCRIBE_PROVIDER ?? 'auto'
+  if (provider === 'rekognition') return 'Rekognition'
+  if (provider === 'bedrock') return 'Bedrock'
+  return 'Bedrock + Rekognition'
+}
+
 export function imageFormat(image: Buffer): 'jpeg' | 'png' {
   return image[0] === 0x89 && image[1] === 0x50 ? 'png' : 'jpeg'
 }
