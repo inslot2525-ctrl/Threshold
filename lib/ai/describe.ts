@@ -8,19 +8,22 @@ import type { Description } from '@/lib/types'
 const MODEL_ID = process.env.BEDROCK_MODEL_ID || 'us.amazon.nova-lite-v1:0'
 
 const PROMPT = `You are helping a family find a relative with dementia who has just walked out of their home at night.
-This is a doorbell/porch camera frame taken moments after they left.
+This is a doorbell/porch camera frame taken moments after they left. The person may already be out of frame.
 
-Describe ONLY what would help someone spot them on the street:
+First decide whether a real person is clearly visible in this image. Only report what you can actually see; never infer
+a person from the situation. If there is no person, set "person_visible" to false and leave every other field "unknown".
+
+If a person is visible, describe ONLY what would help someone spot them on the street:
 - clothing (colors, garment types, layers, footwear or barefoot)
 - anything carried
 - which way they are heading relative to the frame (left, right, toward the street, toward the camera)
 - safety concerns visible in the frame (no coat in cold weather, barefoot, rain, darkness, a road nearby)
 
 Do NOT describe or guess the face, age, race, ethnicity, identity, or any biometric detail.
-If no person is visible, say so in the summary and leave the other fields as "unknown".
-
 Reply with JSON only, no prose:
-{"summary": "<one sentence a neighbor could act on>", "clothing": "...", "carrying": "...", "direction": "...", "concerns": ["..."]}`
+{"person_visible": true|false, "summary": "<one sentence a neighbor could act on>", "clothing": "...", "carrying": "...", "direction": "...", "concerns": ["..."]}`
+
+const NO_PERSON = 'No person visible in this frame.'
 
 let client: BedrockRuntimeClient | null = null
 
@@ -80,7 +83,7 @@ export async function describeWithBedrock(image: Buffer): Promise<Description> {
           ],
         },
       ],
-      inferenceConfig: { maxTokens: 400, temperature: 0.2 },
+      inferenceConfig: { maxTokens: 400, temperature: 0 },
     })
   )
 
@@ -92,6 +95,17 @@ export function parseDescription(text: string, model: string): Description {
   const match = text.match(/\{[\s\S]*\}/)
   if (!match) throw new Error(`Model returned no JSON: ${text.slice(0, 200)}`)
   const raw = JSON.parse(match[0])
+  if (raw.person_visible === false) {
+    return {
+      summary: NO_PERSON,
+      clothing: 'unknown',
+      carrying: 'unknown',
+      direction: 'unknown',
+      concerns: [],
+      model,
+      generatedAt: Date.now(),
+    }
+  }
   return {
     summary: String(raw.summary ?? 'No description available'),
     clothing: String(raw.clothing ?? 'unknown'),

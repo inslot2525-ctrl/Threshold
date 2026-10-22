@@ -73,4 +73,14 @@ describe('description parsing', () => {
     expect(d.summary).toMatch(/robe/)
     expect(d.concerns).toEqual(['no coat'])
   })
+
+  it('drops everything else when the model sees no person', () => {
+    const d = parseDescription(
+      '{"person_visible":false,"summary":"A blue abstract wave","clothing":"None","carrying":"None","direction":"None","concerns":["art"]}',
+      'model-x'
+    )
+    expect(d.summary).toBe('No person visible in this frame.')
+    expect(d.clothing).toBe('unknown')
+    expect(d.concerns).toEqual([])
+  })
 })

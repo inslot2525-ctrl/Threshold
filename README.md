@@ -45,6 +45,7 @@ Ring cloud ──signed webhook──► /api/webhook ──► detector (pure s
 - `lib/engine/detector.ts`: the whole decision logic, pure and unit-tested
 - `lib/ring/`: Ring auth, API client and webhook verification
 - `lib/ai/describe.ts`: Bedrock prompt with privacy guardrails
+- `lib/ai/labels.ts`: Rekognition fallback that turns labels into the same description
 - `lib/runtime.ts`: wires engine → Ring, Bedrock, SNS, storage
 - `lib/simulator.ts`: emits Ring-format, HMAC-signed webhooks for demos
 
@@ -75,7 +76,19 @@ Expose the app over HTTPS (e.g. `ngrok http 3000`), set the webhook URL in the R
 `https://<host>/api/webhook`, then click *Refresh from Ring* and map your door sensor and camera.
 
 **AWS:** set `AWS_REGION` and credentials. Enable a vision model in Bedrock (default `us.amazon.nova-lite-v1:0`,
-override with `BEDROCK_MODEL_ID`). For texts, create an SNS topic, subscribe the caregiver's phone or email, and set `SNS_TOPIC_ARN`.
+override with `BEDROCK_MODEL_ID`; outside US regions use `amazon.nova-lite-v1:0` or `apac.amazon.nova-lite-v1:0`).
+If Bedrock fails (for example a new account whose quota is still 0), descriptions fall back to Amazon Rekognition labels
+and switch back once Bedrock answers; `DESCRIBE_PROVIDER=bedrock|rekognition` pins one. For texts, create an SNS topic,
+subscribe the caregiver's phone or email, and set `SNS_TOPIC_ARN`.
+
+The IAM user needs only:
+
+```json
+{"Version":"2012-10-17","Statement":[
+  {"Effect":"Allow","Action":["bedrock:InvokeModel","bedrock:Converse"],"Resource":"*"},
+  {"Effect":"Allow","Action":"rekognition:DetectLabels","Resource":"*"},
+  {"Effect":"Allow","Action":"sns:Publish","Resource":"*"}]}
+```
 
 ## Tests
 
