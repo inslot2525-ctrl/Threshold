@@ -85,7 +85,7 @@ The IAM user needs only:
 
 ```json
 {"Version":"2012-10-17","Statement":[
-  {"Effect":"Allow","Action":["bedrock:InvokeModel","bedrock:Converse"],"Resource":"*"},
+  {"Effect":"Allow","Action":"bedrock:InvokeModel","Resource":"*"},
   {"Effect":"Allow","Action":"rekognition:DetectLabels","Resource":"*"},
   {"Effect":"Allow","Action":"sns:Publish","Resource":"*"}]}
 ```
