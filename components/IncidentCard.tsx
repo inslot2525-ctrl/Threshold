@@ -14,17 +14,14 @@ function SnapshotBlock({ incident, timezone }: { incident: Incident; timezone: s
     const caption =
       snap.source === 'live' ? 'Frame from the live Ring view' : snap.source === 'demo' ? 'Demo photo' : 'Ring porch camera'
     return (
-      <figure className="space-y-2">
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_10px_40px_-12px_rgba(0,0,0,0.8)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`/api/snapshots/${incident.shareToken}?v=${snap.capturedAt}`}
-            alt="Porch camera photo taken moments after the door opened"
-            className="aspect-video w-full object-cover"
-          />
-        </div>
-        <figcaption className="flex items-center gap-1.5 text-xs text-slate-400">
-          <span className="h-1.5 w-1.5 rounded-full bg-lilac" />
+      <figure className="space-y-1.5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`/api/snapshots/${incident.shareToken}?v=${snap.capturedAt}`}
+          alt="Porch camera photo taken moments after the door opened"
+          className="aspect-video w-full rounded-md border border-line bg-black object-cover"
+        />
+        <figcaption className="font-mono text-[11px] text-muted">
           {caption} · {clock(snap.capturedAt, timezone)}
         </figcaption>
       </figure>
@@ -39,7 +36,7 @@ function SnapshotBlock({ incident, timezone }: { incident: Incident; timezone: s
           ? 'No recorded photo from the camera yet.'
           : 'Waiting for a photo from the porch camera…'
   return (
-    <div className="flex aspect-video w-full items-center justify-center rounded-2xl border border-dashed border-white/15 bg-black/20 p-6 text-center text-sm text-slate-400">
+    <div className="flex aspect-video w-full items-center justify-center rounded-md border border-dashed border-line p-6 text-center text-sm text-muted">
       {text}
     </div>
   )
@@ -53,30 +50,31 @@ export function IncidentDetails({ incident, settings }: { incident: Incident; se
       <div className="space-y-4">
         {d ? (
           <>
-            <p className="font-display text-xl font-semibold leading-snug text-white">{d.summary}</p>
-            <dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 rounded-2xl border border-white/10 bg-black/20 p-4 text-sm">
-              <dt className="text-slate-400">👕 Wearing</dt>
-              <dd className="text-white">{d.clothing}</dd>
-              <dt className="text-slate-400">🎒 Carrying</dt>
-              <dd className="text-white">{d.carrying}</dd>
-              <dt className="text-slate-400">🧭 Heading</dt>
-              <dd className="text-white">{d.direction}</dd>
+            <p className="font-serif text-2xl leading-snug text-paper">{d.summary}</p>
+            <dl className="grid grid-cols-[auto,1fr] gap-x-5 gap-y-1.5 border-y border-line py-3 text-sm">
+              <dt className="label mb-0 self-center">Wearing</dt>
+              <dd>{d.clothing}</dd>
+              <dt className="label mb-0 self-center">Carrying</dt>
+              <dd>{d.carrying}</dd>
+              <dt className="label mb-0 self-center">Heading</dt>
+              <dd>{d.direction}</dd>
             </dl>
             {d.concerns.length > 0 && (
-              <ul className="flex flex-wrap gap-2 text-sm">
+              <ul className="space-y-1 text-sm text-watch">
                 {d.concerns.map((c) => (
-                  <li key={c} className="chip border-watch/30 bg-watch/10 text-watch">
-                    ⚠ {c}
+                  <li key={c} className="flex gap-2">
+                    <span aria-hidden>!</span>
+                    {c}
                   </li>
                 ))}
               </ul>
             )}
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted">
               Description by {d.model}. Clothing and surroundings only, no face or identity analysis.
             </p>
           </>
         ) : (
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-muted">
             {incident.snapshot?.status === 'ok' && Date.now() - incident.snapshot.capturedAt < 60_000
               ? 'Writing a description for searchers…'
               : 'No description available.'}
@@ -90,11 +88,10 @@ export function IncidentDetails({ incident, settings }: { incident: Incident; se
 
 export function Timeline({ incident, timezone }: { incident: Incident; timezone: string }) {
   return (
-    <ol className="relative space-y-2 pl-5 text-sm before:absolute before:bottom-1 before:left-[5px] before:top-1 before:w-px before:bg-gradient-to-b before:from-lilac/60 before:to-transparent">
+    <ol className="space-y-1 text-sm">
       {incident.timeline.map((t, i) => (
-        <li key={i} className="relative text-slate-300">
-          <span className="absolute -left-5 top-1.5 h-2.5 w-2.5 rounded-full border-2 border-ink bg-lilac" />
-          <span className="mr-2 font-mono text-xs text-slate-500">{clock(t.at, timezone)}</span>
+        <li key={i} className="grid grid-cols-[4.5rem,1fr] gap-2 text-paper/85">
+          <span className="font-mono text-xs leading-5 text-muted">{clock(t.at, timezone)}</span>
           {t.text}
         </li>
       ))}

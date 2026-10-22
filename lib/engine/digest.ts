@@ -17,6 +17,11 @@ export interface Digest {
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
+/** "0" or "1.5", never "0.0". */
+function perWeek(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1)
+}
+
 export function buildDigest(incidents: Incident[], now: number, weeks = 6): Digest {
   const buckets: WeekBucket[] = Array.from({ length: weeks }, (_, i) => ({
     weekStart: now - (weeks - i) * WEEK_MS,
@@ -42,9 +47,9 @@ export function buildDigest(incidents: Incident[], now: number, weeks = 6): Dige
   if (thisWeek === 0) {
     message = 'No night exits this week.'
   } else if (thisWeek >= Math.max(2, baseline * 2)) {
-    message = `${thisWeek} night exits this week, up from about ${baseline.toFixed(1)} a week. Worth raising with their doctor.`
+    message = `${thisWeek} night exits this week, up from about ${perWeek(baseline)} a week. Worth raising with their doctor.`
   } else {
-    message = `${thisWeek} night exit${thisWeek === 1 ? '' : 's'} this week, in line with the usual ${baseline.toFixed(1)} a week.`
+    message = `${thisWeek} night exit${thisWeek === 1 ? '' : 's'} this week, in line with the usual ${perWeek(baseline)} a week.`
   }
 
   return { weeks: buckets, thisWeek, baseline, message }

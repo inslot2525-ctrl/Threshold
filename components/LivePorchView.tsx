@@ -144,7 +144,7 @@ export default function LivePorchView({
 
   return (
     <div className="space-y-2">
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-black shadow-[0_10px_40px_-12px_rgba(0,0,0,0.8)]">
+      <div className="relative overflow-hidden rounded-md border border-line bg-black">
         <video
           ref={videoRef}
           autoPlay
@@ -156,8 +156,8 @@ export default function LivePorchView({
             setTimeout(() => captureFrame(), CAPTURE_DELAY_MS)
           }}
         />
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
-          {status === 'live' && <span className="h-2 w-2 animate-pulse rounded-full bg-alarm shadow-[0_0_8px_#FB7185]" />}
+        <span className="tag absolute left-2 top-2 rounded-sm bg-black/75 px-2 py-1 text-white">
+          {status === 'live' && <span className="blink h-1.5 w-1.5 rounded-full bg-alarm" />}
           {status === 'live' ? 'LIVE · Ring' : status === 'connecting' ? 'Connecting to Ring…' : 'Ring live view'}
         </span>
         {status !== 'live' && status !== 'connecting' && (
