@@ -81,3 +81,10 @@ export async function describeWithRekognition(image: Buffer): Promise<Descriptio
   )
   return describeFromLabels(res.Labels ?? [])
 }
+
+/** True if Rekognition sees a person in the frame. Used to turn phone-camera motion into an exit. */
+export async function detectPerson(image: Buffer): Promise<boolean> {
+  client ??= new RekognitionClient({ region: process.env.AWS_REGION || 'us-east-1' })
+  const res = await client.send(new DetectLabelsCommand({ Image: { Bytes: image }, MaxLabels: 20, MinConfidence: MIN_CONFIDENCE }))
+  return (res.Labels ?? []).some((l) => PERSON.has(l.Name ?? ''))
+}

@@ -8,6 +8,25 @@ import Icon from '@/components/Icon'
 
 const FRAME_MS = 250
 const FRAME_WIDTH = 640
+/** Motion check runs on a tiny grayscale copy of each frame. */
+const MOTION_W = 32
+const MOTION_H = 24
+/** A pixel "changed" if its brightness moved this much (0-255)... */
+const PIXEL_DELTA = 25
+/** ...and there's motion if this share of pixels changed. */
+const MOTION_SHARE = 0.06
+
+/** Fraction of pixels that changed since the last frame. */
+function motionShare(prev: Uint8ClampedArray | null, next: Uint8ClampedArray): number {
+  if (!prev) return 0
+  let changed = 0
+  for (let i = 0; i < next.length; i += 4) {
+    const a = 0.299 * prev[i] + 0.587 * prev[i + 1] + 0.114 * prev[i + 2]
+    const b = 0.299 * next[i] + 0.587 * next[i + 1] + 0.114 * next[i + 2]
+    if (Math.abs(a - b) > PIXEL_DELTA) changed++
+  }
+  return changed / (next.length / 4)
+}
 
 type Status = 'idle' | 'starting' | 'live' | 'error'
 
@@ -18,6 +37,7 @@ export default function CameraPage() {
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(0)
+  const [moving, setMoving] = useState(false)
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([])
   const [cameraId, setCameraId] = useState<string | null>(null)
   const [zoom, setZoom] = useState<{ min: number; max: number; step: number; value: number } | null>(null)
@@ -62,6 +82,11 @@ export default function CameraPage() {
       await video.play()
 
       const canvas = document.createElement('canvas')
+      const small = document.createElement('canvas')
+      small.width = MOTION_W
+      small.height = MOTION_H
+      const smallCtx = small.getContext('2d', { willReadFrequently: true })!
+      let prev: Uint8ClampedArray | null = null
       let busy = false
       timerRef.current = setInterval(async () => {
         if (busy || !video.videoWidth) return
@@ -69,9 +94,14 @@ export default function CameraPage() {
         canvas.width = FRAME_WIDTH
         canvas.height = Math.round((video.videoHeight / video.videoWidth) * FRAME_WIDTH)
         canvas.getContext('2d')!.drawImage(video, 0, 0, canvas.width, canvas.height)
+        smallCtx.drawImage(video, 0, 0, MOTION_W, MOTION_H)
+        const pixels = smallCtx.getImageData(0, 0, MOTION_W, MOTION_H).data
+        const motion = motionShare(prev, pixels) > MOTION_SHARE
+        prev = pixels
+        setMoving(motion)
         const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.7))
         if (blob) {
-          await fetch('/api/phonecam', { method: 'POST', body: blob })
+          await fetch('/api/phonecam', { method: 'POST', body: blob, headers: motion ? { 'X-Motion': '1' } : {} })
             .then((r) => r.ok && setSent((n) => n + 1))
             .catch(() => {})
         }
@@ -100,7 +130,7 @@ export default function CameraPage() {
         <video ref={videoRef} playsInline muted className="aspect-[3/4] w-full object-cover" />
         <span className="tag absolute left-3 top-3 rounded-sm bg-black/75 px-2 py-1 text-white">
           {status === 'live' && <span className="blink h-1.5 w-1.5 rounded-full bg-alarm" />}
-          {status === 'live' ? 'Streaming' : status === 'starting' ? 'Starting…' : 'Camera off'}
+          {status === 'live' ? (moving ? 'Streaming · motion' : 'Streaming') : status === 'starting' ? 'Starting…' : 'Camera off'}
         </span>
         {status !== 'live' && status !== 'starting' && (
           <button className="btn-primary absolute inset-0 m-auto h-fit w-fit text-lg" onClick={() => start(cameraId ?? undefined)}>
@@ -153,8 +183,8 @@ export default function CameraPage() {
       )}
       {error && <p className="rounded-lg border border-alarm/50 px-4 py-3 text-alarm">{error}</p>}
       <p className="text-sm text-muted">
-        Point the back camera at the front door and keep this screen open. When someone leaves, Threshold takes
-        the alert photo from this feed.
+        Point the back camera at the front door and keep this screen open. When a person walks through the
+        frame, Threshold treats it as the door opening and someone going out, then waits to see if they come back.
       </p>
     </main>
   )
