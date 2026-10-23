@@ -27,6 +27,7 @@ const SettingsPatch = z
     corroborationSeconds: z.number().int().min(10).max(600),
     returnGraceSeconds: z.number().int().min(10).max(3600),
     acceptGenericMotion: z.boolean(),
+    usePhoneCamera: z.boolean(),
     doorSensorId: z.string().nullable(),
     outdoorCameraId: z.string().nullable(),
   })

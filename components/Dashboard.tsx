@@ -610,6 +610,23 @@ function DevicesPanel({
         </h2>
         <button className="btn px-3 py-1.5 text-sm" onClick={onRefresh}>Refresh</button>
       </div>
+      <div className="mt-5">
+        <p className="label">Porch camera source</p>
+        <div className="grid grid-cols-2 gap-2">
+          {([
+            [true, 'Phone camera'],
+            [false, 'Ring camera'],
+          ] as const).map(([value, label]) => (
+            <button
+              key={label}
+              className={(settings.usePhoneCamera !== false) === value ? 'btn-primary' : 'btn'}
+              onClick={() => onMap({ usePhoneCamera: value })}
+            >
+              <Icon name="camera" className="h-4 w-4" /> {label}
+            </button>
+          ))}
+        </div>
+      </div>
       <ul className="mt-5 space-y-2.5">
         {devices.map((d) => {
           const role =

@@ -31,6 +31,7 @@ export function defaultSettings(): Settings {
     corroborationSeconds: 90,
     returnGraceSeconds: 600,
     acceptGenericMotion: true,
+    usePhoneCamera: true,
     doorSensorId: null,
     outdoorCameraId: null,
   }

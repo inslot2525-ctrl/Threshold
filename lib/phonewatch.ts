@@ -16,6 +16,7 @@ const g = globalThis as unknown as { __thresholdPhoneWatch?: { checking: boolean
 const watch = (g.__thresholdPhoneWatch ??= { checking: false, lastCheckAt: 0, lastPersonAt: 0 })
 
 export async function onPhoneMotion(frame: Buffer) {
+  if (getState().settings.usePhoneCamera === false) return
   const now = Date.now()
   if (watch.checking || now - watch.lastCheckAt < CHECK_EVERY_MS) return
   watch.checking = true

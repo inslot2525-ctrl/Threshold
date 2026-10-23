@@ -28,6 +28,8 @@ export interface Settings {
   returnGraceSeconds: number
   /** Count plain "motion" (Smart Alerts off) as a person. */
   acceptGenericMotion: boolean
+  /** Use a phone on /camera as the porch camera when it's streaming. Off: Ring's camera only. */
+  usePhoneCamera: boolean
   doorSensorId: string | null
   outdoorCameraId: string | null
 }

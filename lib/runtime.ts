@@ -111,7 +111,7 @@ async function captureAndDescribe(incidentId: string, cameraId: string, at: numb
   }
 
   // A phone streaming from /camera stands in as the porch camera while it is connected.
-  const phoneFrame = latestPhoneFrame()
+  const phoneFrame = state.settings.usePhoneCamera !== false ? latestPhoneFrame() : null
   if (phoneFrame) return savePhoto(incident, phoneFrame, Date.now(), 'phone')
 
   let image: Buffer | null

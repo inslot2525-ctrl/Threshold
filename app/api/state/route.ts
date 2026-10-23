@@ -23,7 +23,8 @@ export async function GET() {
     events: state.events.slice(0, 40),
     digest: buildDigest(state.incidents, now),
     ringTokenExpiresAt: currentTokenExpiry(),
-    phoneCamLive: isPhoneCamLive(now),
+    // Saved settings from before this option existed count as on.
+    phoneCamLive: state.settings.usePhoneCamera !== false && isPhoneCamLive(now),
     integrations: {
       ring: isRingConfigured(),
       webhookSigned: Boolean(process.env.RING_HMAC_KEY),
