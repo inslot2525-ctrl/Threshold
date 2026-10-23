@@ -5,6 +5,7 @@ import DoorScene from '@/components/DoorScene'
 import Icon, { type IconName } from '@/components/Icon'
 import { IncidentDetails, Timeline, clock } from '@/components/IncidentCard'
 import LivePorchView from '@/components/LivePorchView'
+import PhoneAlarm from '@/components/PhoneAlarm'
 import PhoneCamView from '@/components/PhoneCamView'
 import type { Digest } from '@/lib/engine/digest'
 import type { Device, HomeEvent, Incident, Settings } from '@/lib/types'
@@ -80,7 +81,7 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-10">
+    <main className="mx-auto max-w-6xl space-y-6 px-4 pb-24 pt-6 sm:px-6 sm:pt-10">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="grid h-12 w-12 place-items-center rounded-xl bg-porch text-ink">
@@ -158,6 +159,12 @@ export default function Dashboard() {
         tokenExpiresAt={state.ringTokenExpiresAt}
         now={now}
         onToken={(token) => act(() => send('/api/ring/token', 'POST', { token }))}
+      />
+
+      <PhoneAlarm
+        alertId={state.active?.state === 'alerted' ? state.active.id : null}
+        personName={state.settings.personName}
+        minutesOut={state.active ? Math.max(1, Math.floor((now - state.active.doorOpenedAt) / 60_000)) : 0}
       />
 
       <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-line pt-5 text-sm text-muted">
