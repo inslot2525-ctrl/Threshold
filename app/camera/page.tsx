@@ -18,6 +18,9 @@ export default function CameraPage() {
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(0)
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([])
+  const [cameraId, setCameraId] = useState<string | null>(null)
+  const [zoom, setZoom] = useState<{ min: number; max: number; step: number; value: number } | null>(null)
 
   const stop = () => {
     if (timerRef.current) clearInterval(timerRef.current)
@@ -29,7 +32,8 @@ export default function CameraPage() {
 
   useEffect(() => stop, [])
 
-  const start = async () => {
+  const start = async (deviceId?: string) => {
+    stop()
     setError(null)
     if (!navigator.mediaDevices?.getUserMedia) {
       setError('This page needs HTTPS for camera access. Open the https:// link, not http://.')
@@ -38,10 +42,21 @@ export default function CameraPage() {
     setStatus('starting')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } },
+        video: deviceId
+          ? { deviceId: { exact: deviceId }, width: { ideal: 1280 } }
+          : { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } },
         audio: false,
       })
       streamRef.current = stream
+      const track = stream.getVideoTracks()[0]
+      setCameraId(track.getSettings().deviceId ?? null)
+      // Labels (e.g. "Back Ultra Wide Camera") are only readable once permission is granted.
+      const all = await navigator.mediaDevices.enumerateDevices()
+      setCameras(all.filter((d) => d.kind === 'videoinput'))
+      // Some phones reach the ultra-wide through zoom below 1x instead of a separate camera.
+      const caps = (track.getCapabilities?.() ?? {}) as { zoom?: { min: number; max: number; step: number } }
+      const current = (track.getSettings() as { zoom?: number }).zoom
+      setZoom(caps.zoom ? { ...caps.zoom, value: current ?? 1 } : null)
       const video = videoRef.current!
       video.srcObject = stream
       await video.play()
@@ -88,7 +103,7 @@ export default function CameraPage() {
           {status === 'live' ? 'Streaming' : status === 'starting' ? 'Starting…' : 'Camera off'}
         </span>
         {status !== 'live' && status !== 'starting' && (
-          <button className="btn-primary absolute inset-0 m-auto h-fit w-fit text-lg" onClick={start}>
+          <button className="btn-primary absolute inset-0 m-auto h-fit w-fit text-lg" onClick={() => start(cameraId ?? undefined)}>
             <Icon name="play" className="h-5 w-5" /> Start camera
           </button>
         )}
@@ -100,6 +115,42 @@ export default function CameraPage() {
           <button className="btn" onClick={stop}>Stop</button>
         </div>
       )}
+      {cameras.length > 1 && (
+        <div>
+          <p className="label">Lens</p>
+          <div className="flex flex-wrap gap-2">
+            {cameras.map((c, i) => (
+              <button
+                key={c.deviceId}
+                className={c.deviceId === cameraId ? 'btn-primary' : 'btn'}
+                onClick={() => start(c.deviceId)}
+              >
+                {cameraLabel(c, i)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {zoom && status === 'live' && (
+        <div>
+          <label className="label" htmlFor="zoom">Zoom {zoom.value.toFixed(1)}x</label>
+          <input
+            id="zoom"
+            type="range"
+            className="w-full accent-[#F2B84B]"
+            min={zoom.min}
+            max={Math.min(zoom.max, 5)}
+            step={zoom.step || 0.1}
+            value={zoom.value}
+            onChange={(e) => {
+              const value = Number(e.target.value)
+              setZoom({ ...zoom, value })
+              const track = streamRef.current?.getVideoTracks()[0]
+              track?.applyConstraints({ advanced: [{ zoom: value } as MediaTrackConstraintSet] }).catch(() => {})
+            }}
+          />
+        </div>
+      )}
       {error && <p className="rounded-lg border border-alarm/50 px-4 py-3 text-alarm">{error}</p>}
       <p className="text-sm text-muted">
         Point the back camera at the front door and keep this screen open. When someone leaves, Threshold takes
@@ -107,4 +158,15 @@ export default function CameraPage() {
       </p>
     </main>
   )
+}
+
+/** Short, readable lens names; phones label them like "Back Ultra Wide Camera" or "camera2 2, facing back". */
+function cameraLabel(camera: MediaDeviceInfo, index: number): string {
+  const label = camera.label.toLowerCase()
+  if (label.includes('ultra')) return 'Ultra wide'
+  if (label.includes('tele')) return 'Telephoto'
+  if (label.includes('front') || label.includes('user')) return 'Front'
+  if (label.includes('dual') || label.includes('triple')) return 'Back (auto)'
+  if (label.includes('back') || label.includes('rear') || label.includes('environment')) return `Back ${index + 1}`
+  return camera.label || `Camera ${index + 1}`
 }
