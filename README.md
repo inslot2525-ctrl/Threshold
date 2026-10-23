@@ -1,3 +1,60 @@
+<div align="center">
+
+# 🚪 Threshold
+
+**Night-exit alerts for dementia caregivers, built on Ring cameras and sensors families already own.**
+
+Ring Partner API · Ring webhooks · WebRTC live view · Amazon Bedrock · Amazon Rekognition · Amazon SNS
+
+</div>
+
+> Six in ten people living with dementia will wander at least once, often at night while the person caring for them is asleep. Threshold watches the front door so caregivers can sleep.
+
+## What it does
+
+| | |
+|---|---|
+| 🚪 **Notices** | A Ring contact sensor reports the front door opening during the hours you set |
+| 🧍 **Confirms** | The porch camera checks it's a person, not a car, a delivery or a cat |
+| ⏳ **Waits** | If they come straight back inside, nobody is woken up |
+| 🔔 **Alerts** | The caregiver's phone rings with a full-screen alarm, and Amazon SNS sends an email |
+| 👕 **Describes** | Amazon Bedrock (Nova Lite) writes what they're wearing for searchers. Clothing only, never faces. Rekognition is the automatic fallback |
+| 📍 **Shares** | One tap opens a search-party page for neighbours |
+| 🏠 **Follows up** | When the door opens again, a "may be back inside" email goes out |
+| 📈 **Spots the trend** | A weekly chart of night exits, an early warning to raise with their doctor |
+
+## Quick start (no hardware or keys needed)
+
+```bash
+git clone https://github.com/inslot2525-ctrl/Threshold && cd Threshold
+npm install
+npm run dev            # http://localhost:3000
+npm test               # 30 tests
+```
+
+Open the dashboard, click **Seed 6 weeks of history**, then **Try a scenario → Walks out and does not come back**.
+
+Optional extras:
+- A Ring Playground token (Developer panel): real device list and Ring live view
+- AWS credentials in `.env.local`: Bedrock or Rekognition descriptions, and SNS email
+- `npm run dev:phone`, then open `https://<your-ip>:3443/camera` on a phone to use it as the porch camera
+
+## How it's built
+
+```
+Ring contact sensor ─┐                    ┌─► Amazon Bedrock (describe) ─► Rekognition fallback
+                     ├─► Threshold engine ┤
+Ring camera ─────────┘   (risk window,    └─► Amazon SNS email · phone alarm · search page
+  motion: human           person check,
+  WebRTC live view        return grace)
+```
+
+- **Privacy by design:** no face recognition, end-to-end encrypted cameras respected, unguessable share links
+- **Open source:** [`ring-partner-mcp`](https://github.com/inslot2525-ctrl/ring-partner-mcp), an MCP server that lets AI agents read Ring devices and events
+- **Friction log:** [FRICTION_LOG.md](FRICTION_LOG.md), what we hit with the Ring and AWS developer tools
+
+---
+
 # Threshold
 
 **Night-exit alerts for dementia caregivers, built on the Ring Partner API.**
