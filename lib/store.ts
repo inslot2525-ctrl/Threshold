@@ -22,7 +22,7 @@ const MAX_REQUEST_IDS = 5000
 
 export function defaultSettings(): Settings {
   return {
-    personName: 'Mom',
+    personName: 'Person',
     caregiverName: 'Caregiver',
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     armMode: 'schedule',

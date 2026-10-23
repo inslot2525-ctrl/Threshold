@@ -88,7 +88,7 @@ export default function Dashboard() {
           </div>
           <div>
             <h1 className="font-serif text-4xl leading-none text-paper sm:text-5xl">Threshold</h1>
-            <p className="mt-1 text-muted">Night-exit alerts for {state.settings.personName}&apos;s front door</p>
+            <p className="mt-1 text-muted">Night-exit alerts for the front door</p>
           </div>
         </div>
         <div className="text-right">
