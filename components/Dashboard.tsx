@@ -101,7 +101,8 @@ export default function Dashboard() {
 
       <StatusHero state={state} now={now} onResolve={(id, outcome) => act(() => send(`/api/incidents/${id}`, 'POST', { outcome }))} />
 
-      {state.phoneCamLive && !state.active && (
+      {/* The porch feed stays up through every state; detection only grabs a still from it. */}
+      {state.phoneCamLive && (
         <section className="card">
           <h2 className="heading">
             <span className="icon-tile">
@@ -305,12 +306,7 @@ function StatusHero({
             <DoorScene mood="alarm" />
           </div>
         </div>
-        {state.phoneCamLive ? (
-          <div className="mt-6 md:w-1/2">
-            <p className="label">Porch, live</p>
-            <PhoneCamView />
-          </div>
-        ) : canStreamLive && (
+        {!state.phoneCamLive && canStreamLive && (
           <div className="mt-6 md:w-1/2">
             <p className="label">Porch, live</p>
             <LivePorchView autoStart captureForIncidentId={active.snapshot?.status === 'ok' ? undefined : active.id} />

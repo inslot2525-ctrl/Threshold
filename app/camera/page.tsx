@@ -8,6 +8,8 @@ import Icon from '@/components/Icon'
 
 const FRAME_MS = 250
 const FRAME_WIDTH = 640
+/** Give up on a frame upload after this, so one stuck request can't stop the stream. */
+const UPLOAD_TIMEOUT_MS = 4000
 /** Motion check runs on a tiny grayscale copy of each frame. */
 const MOTION_W = 32
 const MOTION_H = 24
@@ -34,6 +36,7 @@ export default function CameraPage() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const wakeRef = useRef<{ release(): Promise<void> } | null>(null)
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(0)
@@ -47,6 +50,8 @@ export default function CameraPage() {
     timerRef.current = null
     streamRef.current?.getTracks().forEach((t) => t.stop())
     streamRef.current = null
+    wakeRef.current?.release().catch(() => {})
+    wakeRef.current = null
     setStatus('idle')
   }
 
@@ -101,12 +106,22 @@ export default function CameraPage() {
         setMoving(motion)
         const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.7))
         if (blob) {
-          await fetch('/api/phonecam', { method: 'POST', body: blob, headers: motion ? { 'X-Motion': '1' } : {} })
+          await fetch('/api/phonecam', {
+            method: 'POST',
+            body: blob,
+            headers: motion ? { 'X-Motion': '1' } : {},
+            signal: AbortSignal.timeout(UPLOAD_TIMEOUT_MS),
+          })
             .then((r) => r.ok && setSent((n) => n + 1))
             .catch(() => {})
         }
         busy = false
       }, FRAME_MS)
+      // Keep the screen on: a locked phone stops its camera.
+      const wakeLock = (navigator as Navigator & { wakeLock?: { request(type: 'screen'): Promise<{ release(): Promise<void> }> } }).wakeLock
+      wakeRef.current = (await wakeLock?.request('screen').catch(() => null)) ?? null
+      // If the camera drops (e.g. another app took it), start it again.
+      track.onended = () => setTimeout(() => start(deviceId), 1000)
       setStatus('live')
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -183,7 +198,7 @@ export default function CameraPage() {
       )}
       {error && <p className="rounded-lg border border-alarm/50 px-4 py-3 text-alarm">{error}</p>}
       <p className="text-sm text-muted">
-        Point the back camera at the front door and keep this screen open. When a person walks through the
+        Point the back camera at the front door and keep this page open in front (the screen stays on while streaming). When a person walks through the
         frame, Threshold treats it as the door opening and someone going out, then waits to see if they come back.
       </p>
     </main>
