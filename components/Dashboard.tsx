@@ -5,6 +5,7 @@ import DoorScene from '@/components/DoorScene'
 import Icon, { type IconName } from '@/components/Icon'
 import { IncidentDetails, Timeline, clock } from '@/components/IncidentCard'
 import LivePorchView from '@/components/LivePorchView'
+import PhoneCamView from '@/components/PhoneCamView'
 import type { Digest } from '@/lib/engine/digest'
 import type { Device, HomeEvent, Incident, Settings } from '@/lib/types'
 
@@ -17,6 +18,7 @@ interface DashboardState {
   events: HomeEvent[]
   digest: Digest
   ringTokenExpiresAt: number | null
+  phoneCamLive: boolean
   integrations: { ring: boolean; webhookSigned: boolean; bedrock: boolean; describer: string; sns: boolean; simulator: boolean }
   scenarios: { id: string; label: string }[]
 }
@@ -98,6 +100,20 @@ export default function Dashboard() {
       {error && <div className="rounded-lg border border-alarm/50 px-4 py-3 text-alarm">{error}</div>}
 
       <StatusHero state={state} now={now} onResolve={(id, outcome) => act(() => send(`/api/incidents/${id}`, 'POST', { outcome }))} />
+
+      {state.phoneCamLive && !state.active && (
+        <section className="card">
+          <h2 className="heading">
+            <span className="icon-tile">
+              <Icon name="camera" />
+            </span>
+            Porch camera
+          </h2>
+          <div className="mt-5 md:w-2/3">
+            <PhoneCamView />
+          </div>
+        </section>
+      )}
 
       <StatTiles state={state} />
 
@@ -289,7 +305,12 @@ function StatusHero({
             <DoorScene mood="alarm" />
           </div>
         </div>
-        {canStreamLive && (
+        {state.phoneCamLive ? (
+          <div className="mt-6 md:w-1/2">
+            <p className="label">Porch, live</p>
+            <PhoneCamView />
+          </div>
+        ) : canStreamLive && (
           <div className="mt-6 md:w-1/2">
             <p className="label">Porch, live</p>
             <LivePorchView autoStart captureForIncidentId={active.snapshot?.status === 'ok' ? undefined : active.id} />

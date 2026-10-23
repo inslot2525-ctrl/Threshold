@@ -52,7 +52,7 @@ export interface Description {
 }
 
 export type Snapshot =
-  | { status: 'ok'; file: string; capturedAt: number; source: 'recorded' | 'live' | 'demo' }
+  | { status: 'ok'; file: string; capturedAt: number; source: 'recorded' | 'live' | 'demo' | 'phone' }
   | { status: 'unavailable'; reason: 'encrypted' | 'no_camera' | 'error'; detail?: string }
 
 export interface TimelineEntry {

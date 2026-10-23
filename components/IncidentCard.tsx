@@ -12,7 +12,7 @@ function SnapshotBlock({ incident, timezone }: { incident: Incident; timezone: s
   const snap = incident.snapshot
   if (snap?.status === 'ok') {
     const caption =
-      snap.source === 'live' ? 'Frame from the live Ring view' : snap.source === 'demo' ? 'Demo photo' : 'Ring porch camera'
+      snap.source === 'live' ? 'Frame from the live Ring view' : snap.source === 'phone' ? 'Live porch camera' : snap.source === 'demo' ? 'Demo photo' : 'Ring porch camera'
     return (
       <figure className="space-y-1.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}

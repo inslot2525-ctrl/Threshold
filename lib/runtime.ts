@@ -4,6 +4,7 @@ import { randomBytes, randomUUID } from 'node:crypto'
 import { describeSnapshot, imageFormat, isAiEnabled } from '@/lib/ai/describe'
 import { activeIncident, handleEvent, resolveIncident, tick, type Effect } from '@/lib/engine/detector'
 import { alertText, publishChange, returnedText, sendExternal } from '@/lib/notify'
+import { latestPhoneFrame } from '@/lib/phonecam'
 import { isRingConfigured } from '@/lib/ring/auth'
 import { downloadSnapshot, listDevices } from '@/lib/ring/client'
 import {
@@ -109,6 +110,10 @@ async function captureAndDescribe(incidentId: string, cameraId: string, at: numb
     return commit(state)
   }
 
+  // A phone streaming from /camera stands in as the porch camera while it is connected.
+  const phoneFrame = latestPhoneFrame()
+  if (phoneFrame) return savePhoto(incident, phoneFrame, Date.now(), 'phone')
+
   let image: Buffer | null
   try {
     image =
@@ -138,11 +143,14 @@ export async function attachLiveFrame(incidentId: string, image: Buffer): Promis
   return true
 }
 
-async function savePhoto(incident: Incident, image: Buffer, at: number, source: 'recorded' | 'live' | 'demo') {
+async function savePhoto(incident: Incident, image: Buffer, at: number, source: 'recorded' | 'live' | 'demo' | 'phone') {
   const state = getState()
   const file = writeSnapshot(incident.id, image, imageFormat(image) === 'png' ? 'png' : 'jpg')
   incident.snapshot = { status: 'ok', file, capturedAt: at, source }
-  note(incident, source === 'live' ? 'Frame captured from the live Ring view' : 'Photo saved from the porch camera')
+  note(
+    incident,
+    source === 'live' ? 'Frame captured from the live Ring view' : source === 'phone' ? 'Photo taken from the live porch camera' : 'Photo saved from the porch camera'
+  )
   commit(state)
 
   if (!isAiEnabled()) return

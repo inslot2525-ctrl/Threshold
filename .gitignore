@@ -16,3 +16,6 @@ data/
 # Demo photos are yours to supply
 demo-assets/*
 !demo-assets/README.md
+
+# Self-signed cert for the phone camera proxy
+.certs/
