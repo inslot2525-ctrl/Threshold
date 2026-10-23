@@ -61,6 +61,8 @@ export default function PhoneAlarm({
     // Keep the screen on so the alarm isn't missed behind a locked phone.
     const wakeLock = (navigator as Navigator & { wakeLock?: { request(type: 'screen'): Promise<WakeLock> } }).wakeLock
     wakeRef.current = (await wakeLock?.request('screen').catch(() => null)) ?? null
+    // Only ring for alerts that start from now on, not one already on screen.
+    setAcknowledged(alertId)
     setArmed(true)
   }
 
