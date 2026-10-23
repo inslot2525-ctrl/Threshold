@@ -41,6 +41,13 @@ export default function CameraPage() {
   const [error, setError] = useState<string | null>(null)
   const [sent, setSent] = useState(0)
   const [moving, setMoving] = useState(false)
+  const [lastOkAt, setLastOkAt] = useState(0)
+  const [now, setNow] = useState(Date.now())
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(timer)
+  }, [])
   const [cameras, setCameras] = useState<MediaDeviceInfo[]>([])
   const [cameraId, setCameraId] = useState<string | null>(null)
   const [zoom, setZoom] = useState<{ min: number; max: number; step: number; value: number } | null>(null)
@@ -96,26 +103,40 @@ export default function CameraPage() {
       timerRef.current = setInterval(async () => {
         if (busy || !video.videoWidth) return
         busy = true
-        canvas.width = FRAME_WIDTH
-        canvas.height = Math.round((video.videoHeight / video.videoWidth) * FRAME_WIDTH)
-        canvas.getContext('2d')!.drawImage(video, 0, 0, canvas.width, canvas.height)
-        smallCtx.drawImage(video, 0, 0, MOTION_W, MOTION_H)
-        const pixels = smallCtx.getImageData(0, 0, MOTION_W, MOTION_H).data
-        const motion = motionShare(prev, pixels) > MOTION_SHARE
-        prev = pixels
-        setMoving(motion)
-        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.7))
-        if (blob) {
-          await fetch('/api/phonecam', {
-            method: 'POST',
-            body: blob,
-            headers: motion ? { 'X-Motion': '1' } : {},
-            signal: AbortSignal.timeout(UPLOAD_TIMEOUT_MS),
-          })
-            .then((r) => r.ok && setSent((n) => n + 1))
-            .catch(() => {})
+        // Whatever goes wrong with one frame, the next one must still go out.
+        try {
+          canvas.width = FRAME_WIDTH
+          canvas.height = Math.round((video.videoHeight / video.videoWidth) * FRAME_WIDTH)
+          canvas.getContext('2d')!.drawImage(video, 0, 0, canvas.width, canvas.height)
+          smallCtx.drawImage(video, 0, 0, MOTION_W, MOTION_H)
+          const pixels = smallCtx.getImageData(0, 0, MOTION_W, MOTION_H).data
+          const motion = motionShare(prev, pixels) > MOTION_SHARE
+          prev = pixels
+          setMoving(motion)
+          const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.7))
+          if (!blob) return
+          // AbortSignal.timeout() is missing on older iPhones, so time out by hand.
+          const abort = new AbortController()
+          const timeout = setTimeout(() => abort.abort(), UPLOAD_TIMEOUT_MS)
+          try {
+            const res = await fetch('/api/phonecam', {
+              method: 'POST',
+              body: blob,
+              headers: motion ? { 'X-Motion': '1' } : {},
+              signal: abort.signal,
+            })
+            if (res.ok) {
+              setSent((n) => n + 1)
+              setLastOkAt(Date.now())
+            }
+          } finally {
+            clearTimeout(timeout)
+          }
+        } catch {
+          // Dropped frame; the next tick tries again.
+        } finally {
+          busy = false
         }
-        busy = false
       }, FRAME_MS)
       // Keep the screen on: a locked phone stops its camera.
       const wakeLock = (navigator as Navigator & { wakeLock?: { request(type: 'screen'): Promise<{ release(): Promise<void> }> } }).wakeLock
@@ -156,7 +177,11 @@ export default function CameraPage() {
 
       {status === 'live' && (
         <div className="flex items-center justify-between gap-3">
-          <p className="font-mono text-sm text-muted">{sent} frames sent</p>
+          {now - lastOkAt > 3000 ? (
+            <p className="font-mono text-sm text-alarm">Not reaching the laptop. Check the Wi-Fi</p>
+          ) : (
+            <p className="font-mono text-sm text-calm">Connected · {sent} frames sent</p>
+          )}
           <button className="btn" onClick={stop}>Stop</button>
         </div>
       )}
