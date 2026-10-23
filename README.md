@@ -23,6 +23,16 @@ Ring Partner API · Ring webhooks · WebRTC live view · Amazon Bedrock · Amazo
 | 🏠 **Follows up** | When the door opens again, a "may be back inside" email goes out |
 | 📈 **Spots the trend** | A weekly chart of night exits, an early warning to raise with their doctor |
 
+## Screenshots
+
+| All quiet, live porch camera | Person seen, countdown before alerting |
+|---|---|
+| ![All quiet](docs/screenshots/1-all-quiet.jpg) | ![Countdown](docs/screenshots/2-countdown.jpg) |
+| **Full-screen alarm on the caregiver's phone** | **Alert with photo and AI description** |
+| ![Alarm](docs/screenshots/3-alarm.jpg) | ![Alert description](docs/screenshots/4-alert-description.jpg) |
+| **Ring Playground live view (Ring Partner API)** | |
+| ![Ring live](docs/screenshots/5-ring-live.jpg) | |
+
 ## Quick start (no hardware or keys needed)
 
 ```bash
